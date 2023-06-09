@@ -10,7 +10,7 @@ app.use(express.json());
 
 /*------MongoDB start----------*/
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.jp6ok1r.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, {
@@ -29,6 +29,7 @@ async function run() {
 const instructorsCollection = client.db('summerCampDB').collection('instructors');
 const classesCollection = client.db('summerCampDB').collection('classes');
 const whyShouldCollection = client.db('summerCampDB').collection('whyShould');
+const cartCollection = client.db('summerCampDB').collection('carts');
 
 app.get('/instructors', async(req, res) => {
     const result = await instructorsCollection.find().toArray();
@@ -46,6 +47,26 @@ app.get('/whyShould', async(req, res) => {
 })
 
 
+app.get('/instructors/:id', async (req, res) => {
+    const id = req.params.id;  
+    try {
+      const instructor = await instructorsCollection.findOne({ _id: new ObjectId(id) });    
+      res.send(instructor);
+    } catch (error) {
+      res.status(500).send('An error occurred');
+    }
+  });
+
+// add to cart  
+app.post('/carts', async(req, res) => {
+    const item = req.body;
+    console.log(item);
+    const result = await cartCollection.insertOne(item);
+    res.send(result);
+}) 
+// add to cart   
+  
+  
 
 
 
