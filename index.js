@@ -33,6 +33,12 @@ const cartCollection = client.db('summerCampDB').collection('carts');
 const usersCollection = client.db('summerCampDB').collection('users');
 
 //users api
+app.get('/users', async(req, res) =>{
+    const result = await usersCollection.find().toArray();
+    res.send(result);
+})
+
+
 app.post("/users", async(req, res) =>{
     const user = req.body;
     const query = {email: user.email}
@@ -41,6 +47,25 @@ app.post("/users", async(req, res) =>{
         return res.send({message: 'user already exist'})
     }
     const result = await usersCollection.insertOne(user);
+    res.send(result);
+})
+
+app.patch('/users/admin/:id', async(req, res) => {
+    const id = req.params.id;
+    const filter = {_id: new ObjectId(id)};
+    const updateDoc = {
+        $set: {
+            role: 'admin'
+        },
+    };
+    const result = await usersCollection.updateOne(filter, updateDoc);
+    res.send(result);
+})
+
+app.delete('/users/:id', async(req, res) =>{
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id)};
+    const result = await usersCollection.deleteOne(query);
     res.send(result);
 })
 
