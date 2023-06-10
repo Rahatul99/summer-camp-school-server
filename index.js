@@ -30,12 +30,23 @@ const instructorsCollection = client.db('summerCampDB').collection('instructors'
 const classesCollection = client.db('summerCampDB').collection('classes');
 const whyShouldCollection = client.db('summerCampDB').collection('whyShould');
 const cartCollection = client.db('summerCampDB').collection('carts');
+const usersCollection = client.db('summerCampDB').collection('users');
 
+//users api
+app.post("/users", async(req, res) =>{
+    const user = req.body;
+    const result = await usersCollection.insertOne(user);
+    res.send(result);
+})
+
+
+//instructor api 
 app.get('/instructors', async(req, res) => {
     const result = await instructorsCollection.find().toArray();
     res.send(result);
 })
 
+//classes api
 app.get('/classes', async(req, res) => {
     const result = await classesCollection.find().toArray();
     res.send(result);
@@ -60,7 +71,6 @@ app.get('/instructors/:id', async (req, res) => {
 // add to cart  
 app.get('/carts', async(req, res) => {
     const email = req.query.email;
-    console.log(email);
     if(!email){
         res.send([]);
     }
@@ -72,10 +82,16 @@ app.get('/carts', async(req, res) => {
 
 app.post('/carts', async(req, res) => {
     const item = req.body;
-    console.log(item);
     const result = await cartCollection.insertOne(item);
     res.send(result);
 }) 
+
+app.delete('/carts/:id', async(req, res) =>{
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id)};
+    const result = await cartCollection.deleteOne(query);
+    res.send(result);
+})
 // add to cart   
   
   
