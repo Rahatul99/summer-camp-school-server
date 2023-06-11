@@ -42,7 +42,7 @@ async function run() {
         await client.connect();
 
 
-        const instructorsCollection = client.db('summerCampDB').collection('instructors');
+        // const instructorsCollection = client.db('summerCampDB').collection('instructors'); //todo:delete
         const classesCollection = client.db('summerCampDB').collection('classes');
         const whyShouldCollection = client.db('summerCampDB').collection('whyShould');
         const cartCollection = client.db('summerCampDB').collection('carts');
@@ -142,12 +142,49 @@ async function run() {
             res.send(result);
         })
 
-
+////-----------------delete--------------//
         //instructor api 
-        app.get('/instructors', async (req, res) => {
-            const result = await instructorsCollection.find().toArray();
-            res.send(result);
-        })
+        // app.get('/instructors', async (req, res) => {
+        //     const result = await instructorsCollection.find().toArray();
+        //     res.send(result);
+        // })
+
+
+        
+        // app.get('/instructors/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     try {
+        //         const instructor = await instructorsCollection.findOne({ _id: new ObjectId(id) });
+        //         res.send(instructor);
+        //     } catch (error) {
+        //         res.status(500).send('An error occurred');
+        //     }
+        // });
+////-----------------delete--------------//        
+
+
+        app.get('/users/instructors', async (req, res) => {
+            const filter = { role: 'instructor' };
+          
+            try {
+              const users = await usersCollection.find(filter).toArray();
+              res.send(users);
+            } catch (error) {
+              console.error('Error retrieving instructors:', error);
+              res.status(500).send('Internal Server Error');
+            }
+          });
+
+        app.get('/users/instructors/:id', async (req, res) => {
+            const id = req.params.id;
+            try {
+                const instructor = await usersCollection.findOne({ _id: new ObjectId(id) });
+                res.send(instructor);
+            } catch (error) {
+                res.status(500).send('An error occurred');
+            }
+        });  
+          
 
         //classes api
         app.get('/classes', async (req, res) => {
@@ -159,17 +196,6 @@ async function run() {
             const result = await whyShouldCollection.find().toArray();
             res.send(result);
         })
-
-
-        app.get('/instructors/:id', async (req, res) => {
-            const id = req.params.id;
-            try {
-                const instructor = await instructorsCollection.findOne({ _id: new ObjectId(id) });
-                res.send(instructor);
-            } catch (error) {
-                res.status(500).send('An error occurred');
-            }
-        });
 
         // add to cart  
         app.get('/carts', verifyJWT, async (req, res) => {
