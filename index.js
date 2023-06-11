@@ -65,7 +65,7 @@ async function run() {
             next();
         }
 
-//users api --------------------------start----------------------------
+        //users api --------------------------start----------------------------
         app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
@@ -163,14 +163,14 @@ async function run() {
                 res.status(500).send('An error occurred');
             }
         });
-//--------------------------users end here -------------------------//
+        //--------------------------users end here -------------------------//
 
-//--------------------------classes api-----------------------------//
+        //--------------------------classes api-----------------------------//
         app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray();
             res.send(result);
         })
-          
+
         app.post('/classes', verifyJWT, async (req, res) => {
             const newClass = req.body;
             const result = await classesCollection.insertOne(newClass)
@@ -202,52 +202,62 @@ async function run() {
             res.send(result);
         })
 
-        // app.post('/classes/feedback/:id', (req, res) => {
-        //     const classId = [req.params.id]
-        //     const feedback = req.body.feedback;
+        app.post("/classes/feedback/:id", async (req, res) => {
+            const id = req.params.id;
+            const feedback = req.body.feedback;
 
+            try {
+                const result = await classesCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { feedback: feedback } }
+                );
 
-        //     const newClass = req.body;
-        //     const result = await classesCollection.insertOne(newClass)
-        //     res.send(result);
-        //     });
-
+                if (result.modifiedCount > 0) {
+                    res.sendStatus(200);
+                } else {
+                    res.sendStatus(404);
+                }
+            } catch (error) {
+                console.error('Error updating class:', error);
+                res.sendStatus(500);
+            }
+        });
         app.get('/classes/:email', async (req, res) => {
             const email = req.params.email;
             if (!email) {
-              res.send([]);
+                res.send([]);
             }
             const query = { instructorEmail: email };
             const result = await classesCollection.find(query).toArray();
             res.send(result);
-          });
+        });
 
         app.put('/classes/:id', async (req, res) => {
             const id = req.params.id;
             const body = req.body;
-          
+
             try {
-              const result = await classesCollection.updateOne({ _id: new ObjectId(id) }, { $set: { price: parseFloat(body.price) } });
-              if (result.modifiedCount > 0) {
-                res.sendStatus(200);
-              } else {
-                res.sendStatus(404);
-              }
+                const result = await classesCollection.updateOne({ _id: new ObjectId(id) }, { $set: { price: parseFloat(body.price) } });
+                if (result.modifiedCount > 0) {
+                    res.sendStatus(200);
+                } else {
+                    res.sendStatus(404);
+                }
             } catch (error) {
-              console.error('Error updating class:', error);
-              res.sendStatus(500);
+                console.error('Error updating class:', error);
+                res.sendStatus(500);
             }
-          });
-          
-          
-//----------------------classes api end here---------------------------//        
+        });
+
+
+        //----------------------classes api end here---------------------------//        
 
         app.get('/whyShould', async (req, res) => {
             const result = await whyShouldCollection.find().toArray();
             res.send(result);
         })
 
-//----------------------- add to cart start-------------------------------//  
+        //----------------------- add to cart start-------------------------------//  
         app.get('/carts', verifyJWT, async (req, res) => {
             const email = req.query.email;
             if (!email) {
@@ -276,8 +286,8 @@ async function run() {
             const result = await cartCollection.deleteOne(query);
             res.send(result);
         })
-          
-//-------------------------- add to cart end -----------------------//   
+
+        //-------------------------- add to cart end -----------------------//   
 
 
 
