@@ -55,17 +55,17 @@ async function run() {
             res.send({ token })
         })
 
-        const verifyAdmin =async(req, res, next) =>{
+        const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
-            const query = {email: email}
+            const query = { email: email }
             const user = await usersCollection.findOne(query);
-            if(user?.role !== 'admin'){
-                return res.status(403).send({error: true, message: 'forbidden access'});
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ error: true, message: 'forbidden access' });
             }
             next();
-        } 
+        }
 
-        //users api
+//users api --------------------------start----------------------------
         app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
@@ -82,14 +82,14 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users/admin/:email',verifyJWT, async(req, res) => {
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
 
-            if(req.decoded.email !== email){
-                res.send({admin: false})
+            if (req.decoded.email !== email) {
+                res.send({ admin: false })
             }
 
-            const query = {email: email}
+            const query = { email: email }
             const user = await usersCollection.findOne(query);
             const result = { admin: user?.role === 'admin' }
             res.send(result);
@@ -108,14 +108,14 @@ async function run() {
         })
 
 
-        app.get('/users/instructor/:email',verifyJWT, async(req, res) => {
+        app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
 
-            if(req.decoded.email !== email){
-                res.send({instructor: false})
+            if (req.decoded.email !== email) {
+                res.send({ instructor: false })
             }
 
-            const query = {email: email}
+            const query = { email: email }
             const user = await usersCollection.findOne(query);
             const result = { instructor: user?.role === 'instructor' }
             res.send(result);
@@ -126,14 +126,14 @@ async function run() {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
-              $set: {
-                role: 'instructor',
-              },
+                $set: {
+                    role: 'instructor',
+                },
             };
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
-          });
-          
+        });
+
 
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -142,38 +142,17 @@ async function run() {
             res.send(result);
         })
 
-////-----------------delete--------------//
-        //instructor api 
-        // app.get('/instructors', async (req, res) => {
-        //     const result = await instructorsCollection.find().toArray();
-        //     res.send(result);
-        // })
-
-
-        
-        // app.get('/instructors/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     try {
-        //         const instructor = await instructorsCollection.findOne({ _id: new ObjectId(id) });
-        //         res.send(instructor);
-        //     } catch (error) {
-        //         res.status(500).send('An error occurred');
-        //     }
-        // });
-////-----------------delete--------------//        
-
-
         app.get('/users/instructors', async (req, res) => {
             const filter = { role: 'instructor' };
-          
+
             try {
-              const users = await usersCollection.find(filter).toArray();
-              res.send(users);
+                const users = await usersCollection.find(filter).toArray();
+                res.send(users);
             } catch (error) {
-              console.error('Error retrieving instructors:', error);
-              res.status(500).send('Internal Server Error');
+                console.error('Error retrieving instructors:', error);
+                res.status(500).send('Internal Server Error');
             }
-          });
+        });
 
         app.get('/users/instructors/:id', async (req, res) => {
             const id = req.params.id;
@@ -183,27 +162,92 @@ async function run() {
             } catch (error) {
                 res.status(500).send('An error occurred');
             }
-        });  
-          
+        });
+//--------------------------users end here -------------------------//
 
-        //classes api
+//--------------------------classes api-----------------------------//
         app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray();
             res.send(result);
         })
-
-        app.post('/classes', async(req, res) => {
+          
+        app.post('/classes', verifyJWT, async (req, res) => {
             const newClass = req.body;
             const result = await classesCollection.insertOne(newClass)
             res.send(result);
         })
+
+
+        app.patch('/classes/approved/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: 'approved'
+                },
+            };
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        app.patch('/classes/deny/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: 'deny'
+                },
+            };
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        // app.post('/classes/feedback/:id', (req, res) => {
+        //     const classId = [req.params.id]
+        //     const feedback = req.body.feedback;
+
+
+        //     const newClass = req.body;
+        //     const result = await classesCollection.insertOne(newClass)
+        //     res.send(result);
+        //     });
+
+        app.get('/classes/:email', async (req, res) => {
+            const email = req.params.email;
+            if (!email) {
+              res.send([]);
+            }
+            const query = { instructorEmail: email };
+            const result = await classesCollection.find(query).toArray();
+            res.send(result);
+          });
+
+        app.put('/classes/:id', async (req, res) => {
+            const id = req.params.id;
+            const body = req.body;
+          
+            try {
+              const result = await classesCollection.updateOne({ _id: new ObjectId(id) }, { $set: { price: parseFloat(body.price) } });
+              if (result.modifiedCount > 0) {
+                res.sendStatus(200);
+              } else {
+                res.sendStatus(404);
+              }
+            } catch (error) {
+              console.error('Error updating class:', error);
+              res.sendStatus(500);
+            }
+          });
+          
+          
+//----------------------classes api end here---------------------------//        
 
         app.get('/whyShould', async (req, res) => {
             const result = await whyShouldCollection.find().toArray();
             res.send(result);
         })
 
-        // add to cart  
+//----------------------- add to cart start-------------------------------//  
         app.get('/carts', verifyJWT, async (req, res) => {
             const email = req.query.email;
             if (!email) {
@@ -232,7 +276,8 @@ async function run() {
             const result = await cartCollection.deleteOne(query);
             res.send(result);
         })
-        // add to cart   
+          
+//-------------------------- add to cart end -----------------------//   
 
 
 
