@@ -48,6 +48,7 @@ async function run() {
         const whyShouldCollection = client.db('summerCampDB').collection('whyShould');
         const cartCollection = client.db('summerCampDB').collection('carts');
         const usersCollection = client.db('summerCampDB').collection('users');
+        const paymentsCollection = client.db('summerCampDB').collection('payments');
 
         app.post('/jwt', (req, res) => {
             const user = req.body;
@@ -304,6 +305,22 @@ async function run() {
               clientSecret: paymentIntent.client_secret
             })
           })
+
+          app.post('/payments', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const insertResult = await paymentsCollection.insertOne(payment);
+      
+            const query = { _id: { $in: payment.classId.map(id => new ObjectId(id)) } }
+            const deleteResult = await cartCollection.deleteMany(query)
+      
+            res.status(200).send({ insertResult, deleteResult });
+          })
+
+          app.get('/payments', async (req, res) => {
+            const result = await paymentsCollection.find().toArray();
+            res.send(result);
+        })
+
         //--------------------------------------------------------//
 
 
