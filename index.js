@@ -25,7 +25,7 @@ const verifyJWT = (req, res, next) => {
         next();
     })
 }
-/*------MongoDB start----------*/
+/*------MongoDB start here----------*/
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.jp6ok1r.mongodb.net/?retryWrites=true&w=majority`;
@@ -42,8 +42,6 @@ async function run() {
     try {
         // await client.connect();
 
-
-        // const instructorsCollection = client.db('summerCampDB').collection('instructors'); //todo:delete
         const classesCollection = client.db('summerCampDB').collection('classes');
         const whyShouldCollection = client.db('summerCampDB').collection('whyShould');
         const cartCollection = client.db('summerCampDB').collection('carts');
@@ -67,7 +65,7 @@ async function run() {
             next();
         }
 
-        //users api --------------------------start----------------------------
+    //--------------------------users api start------------------------//
         app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
@@ -97,7 +95,7 @@ async function run() {
             res.send(result);
         })
 
-        app.patch('/users/admin/:id', async (req, res) => {
+        app.patch('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -109,6 +107,7 @@ async function run() {
             res.send(result);
         })
 
+    //--------------------------instructor-----------------//
 
         app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
@@ -124,7 +123,7 @@ async function run() {
         })
 
 
-        app.patch('/users/instructor/:id', async (req, res) => {
+        app.patch('/users/instructor/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -137,12 +136,14 @@ async function run() {
         });
 
 
-        app.delete('/users/:id', async (req, res) => {
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
             res.send(result);
         })
+
+        //----------//
 
         app.get('/users/instructors', async (req, res) => {
             const filter = { role: 'instructor' };
@@ -165,7 +166,10 @@ async function run() {
                 res.status(500).send('An error occurred');
             }
         });
-        //--------------------------users end here -------------------------//
+
+        //--------------------//
+
+
 
         //--------------------------classes api-----------------------------//
         app.get('/classes', async (req, res) => {
@@ -173,14 +177,20 @@ async function run() {
             res.send(result);
         })
 
-        app.post('/classes', verifyJWT, async (req, res) => {
+        // app.get('/classes', async (req, res) => {
+        //     const result = await classesCollection.find({ status: 'approved	' }).toArray();
+        //     res.send(result);
+        // });
+
+
+        app.post('/classes', async (req, res) => {
             const newClass = req.body;
             const result = await classesCollection.insertOne(newClass)
             res.send(result);
         })
 
 
-        app.patch('/classes/approved/:id', async (req, res) => {
+        app.patch('/classes/approved/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -192,7 +202,7 @@ async function run() {
             res.send(result);
         })
 
-        app.patch('/classes/deny/:id', async (req, res) => {
+        app.patch('/classes/deny/:id', verifyJWT , verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -204,7 +214,7 @@ async function run() {
             res.send(result);
         })
 
-        app.post("/classes/feedback/:id", async (req, res) => {
+        app.post("/classes/feedback/:id", verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const feedback = req.body.feedback;
 
@@ -224,7 +234,7 @@ async function run() {
                 res.sendStatus(500);
             }
         });
-        app.get('/classes/:email', async (req, res) => {
+        app.get('/classes/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             if (!email) {
                 res.send([]);
@@ -234,7 +244,7 @@ async function run() {
             res.send(result);
         });
 
-        app.put('/classes/:id', async (req, res) => {
+        app.put('/classes/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const body = req.body;
 
@@ -289,47 +299,55 @@ async function run() {
             res.send(result);
         })
 
-        //-------------------------- add to cart end -----------------------//  
-        
+        //------------------------ add to cart end -------------------//  
+
         //-------------------------payment intent------------------//
         app.post("/create-payment-intent", verifyJWT, async (req, res) => {
             const { price } = req.body;
             const amount = parseInt(price * 100); //extra1
-      
+
             const paymentIntent = await stripe.paymentIntents.create({
-              amount: amount,
-              currency: 'usd',
-              payment_method_types: ['card']
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
             });
             res.send({
-              clientSecret: paymentIntent.client_secret
+                clientSecret: paymentIntent.client_secret
             })
-          })
+        })
 
-          app.post('/payments', verifyJWT, async (req, res) => {
+        //   app.post('/payments', verifyJWT, async (req, res) => {
+        //     const payment = req.body;
+        //     const insertResult = await paymentsCollection.insertOne(payment);
+
+        //     const query = { _id: { $in: payment.classId.map(id => new ObjectId(id)) } }
+        //     const deleteResult = await cartCollection.deleteMany(query)
+
+        //     res.status(200).send({ insertResult, deleteResult });
+        //   })
+        app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
-            const insertResult = await paymentsCollection.insertOne(payment);
-      
-            const query = { _id: { $in: payment.classId.map(id => new ObjectId(id)) } }
-            const deleteResult = await cartCollection.deleteMany(query)
-      
-            res.status(200).send({ insertResult, deleteResult });
-          })
 
-          app.get('/payments', async (req, res) => {
+            try {
+                const insertResult = await paymentsCollection.insertOne(payment);
+                const deleteResult = await cartCollection.deleteOne({ courseId: payment.classId });
+                const updateResult = await classesCollection.updateOne(
+                    { _id: new ObjectId(payment.classId) },
+                    { $inc: { student: 1, availableSeats: -1 } }
+                  );
+                  
+                res.status(200).send({ insertResult, deleteResult, updateResult });
+            } catch (error) {
+                res.status(500).send({ error: 'An error occurred during payment processing.' });
+            }
+        });
+
+        app.get('/payments', verifyJWT, async (req, res) => {
             const result = await paymentsCollection.find().toArray();
             res.send(result);
         })
 
         //--------------------------------------------------------//
-
-
-
-
-
-
-
-
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
